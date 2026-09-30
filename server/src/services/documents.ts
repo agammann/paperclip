@@ -499,6 +499,9 @@ export function documentService(db: Db) {
           };
           });
         } catch (error) {
+          if (input.baseRevisionId && isUniqueViolation(error, "document_revisions_document_revision_uq")) {
+            throw conflict("Document was updated by someone else");
+          }
           if (isUniqueViolation(error, "issue_documents_company_issue_key_uq")) {
             if (input.lockedDocumentStrategy === "create_new_document" && attempt < maxAttempts - 1) {
               continue;

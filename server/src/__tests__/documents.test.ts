@@ -59,6 +59,22 @@ describe("document creation conflicts", () => {
     });
   });
 
+  it("returns a conflict when a concurrent update claims the same revision number", async () => {
+    const error = new Error("Failed query: insert into document_revisions", {
+      cause: Object.assign(new Error("duplicate key"), {
+        code: "23505",
+        constraint_name: "document_revisions_document_revision_uq",
+      }),
+    });
+    await expect(serviceWithTransactionError(error).upsertIssueDocument({
+      ...input,
+      baseRevisionId: "revision-1",
+    })).rejects.toMatchObject({
+      status: 409,
+      message: "Document was updated by someone else",
+    });
+  });
+
   it.each([
     { code: "23503", constraint_name: "issue_documents_issue_id_issues_id_fk" },
     { code: "23505", constraint_name: "document_revisions_document_revision_uq" },
